@@ -1,0 +1,27 @@
+{
+  "name": "y",
+  "version": "0.0.1",
+  "description": "Shift manager",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JanCech9/kafchazka.git"
+  },
+  "author": "Jan Čech",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JanCech9/kafchazka/issues"
+  },
+  "homepage": "https://github.com/JanCech9/kafchazka#readme",
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.0"
+  }
+}
