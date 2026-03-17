@@ -62,10 +62,10 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
               className="day-cell"
               onClick={() => onDayClick(day)}
               style={{
-                background: isToday ? "#2e2518" : "#1e1810",
+                background: isToday ? "#ddd5c5" : "#ede6da",
                 border: isToday
-                  ? "1.5px solid #c8a060"
-                  : `1px solid ${we ? "#3a3020" : "#2a2218"}`,
+                  ? "1.5px solid #a0622a"
+                  : `1px solid ${we ? "#c8b8a0" : "#d8cfc4"}`,
                 borderRadius: 8,
                 padding: "8px 6px",
                 minHeight: 80,
@@ -74,7 +74,7 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
               {/* Day number */}
               <div style={{
                 fontSize: 12, fontWeight: isToday ? 700 : 400,
-                color: we ? "#c8a060" : (isToday ? "#f0e8d8" : "#8a7a6a"),
+                color: we ? "#a0622a" : (isToday ? "#3a2e20" : "#9a8a7a"),
                 marginBottom: 4, textAlign: "right",
               }}>
                 {day}
@@ -95,7 +95,7 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
 
               {/* Empty placeholder */}
               {!shift && (
-                <div style={{ fontSize: 9, color: "#4a3a2a", textAlign: "center", marginTop: 10, fontStyle: "italic" }}>
+                <div style={{ fontSize: 9, color: "#b0a090", textAlign: "center", marginTop: 10, fontStyle: "italic" }}>
                   + add shift
                 </div>
               )}
