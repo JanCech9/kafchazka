@@ -51,12 +51,12 @@ export default function StaffView({ staff, onAdd, onRemove }) {
       {/* Staff list */}
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         {staff.map(s => (
-          <div key={s.name} className="staff-pill">
+          <div key={s.id} className="staff-pill">
             <div style={{ width: 12, height: 12, borderRadius: 3, background: s.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 14, color: "#d8c8a8" }}>{s.name}</span>
+            <span style={{ fontSize: 14, color: "#3a2e20" }}>{s.name}</span>
             <button
-              onClick={() => onRemove(s.name)}
-              style={{ background: "none", border: "none", color: "#6a5a4a", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 0 0 4px" }}
+              onClick={() => onRemove(s.id)}
+              style={{ background: "none", border: "none", color: "#9a8a7a", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 0 0 4px" }}
             >
               ×
             </button>
