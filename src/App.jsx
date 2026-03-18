@@ -107,8 +107,8 @@ export default function App() {
       {/* Top header */}
       <div style={header}>
         <div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, letterSpacing: "-0.01em", color: "#f0e8d8" }}>
-            ☕ Shift Planner
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, letterSpacing: "-0.01em", color: "" }}>
+            Kafcházka shift planner
           </div>
           <div style={{ fontSize: 12, color: "#7a6a5a", marginTop: 2, fontStyle: "italic" }}>
             your café, organised
