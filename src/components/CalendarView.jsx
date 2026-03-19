@@ -17,7 +17,7 @@ import { getMonthGrid, isWeekend, dateKey } from "../utils";
  *   onNextMonth – callback to go to next month
  *   onDayClick  – callback(day: number) when a day cell is clicked
  */
-export default function CalendarView({ year, month, shifts, staff, todayKey, onPrevMonth, onNextMonth, onDayClick }) {
+export default function CalendarView({ year, month, shifts, staff, todayKey, onPrevMonth, onNextMonth, onDayClick, readonly = false }) {
   const grid = getMonthGrid(year, month);
   const getStaffColor = (name) => staff.find(s => s.name === name)?.color || "#aaa";
 
@@ -39,7 +39,7 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
           <div key={d} style={{
             textAlign: "center", fontSize: 11, fontWeight: 600,
             letterSpacing: "0.1em", textTransform: "uppercase", padding: "6px 0",
-            color: d === "Sat" || d === "Sun" ? "#c8a060" : "#7a6a5a",
+            color: d === "Sat" || d === "Sun" ? "#a0622a" : "#9a8a7a",
           }}>
             {d}
           </div>
@@ -59,8 +59,8 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
           return (
             <div
               key={key}
-              className="day-cell"
-              onClick={() => onDayClick(day)}
+              className={readonly ? undefined : "day-cell"}
+              onClick={() => !readonly && onDayClick(day)}
               style={{
                 background: isToday ? "#ddd5c5" : "#ede6da",
                 border: isToday
@@ -69,6 +69,7 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
                 borderRadius: 8,
                 padding: "8px 6px",
                 minHeight: 80,
+                cursor: readonly ? "default" : "pointer",
               }}
             >
               {/* Day number */}
@@ -93,9 +94,9 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
                 </>
               )}
 
-              {/* Empty placeholder */}
-              {!shift && (
-                <div style={{ fontSize: 9, color: "#b0a090", textAlign: "center", marginTop: 10, fontStyle: "italic" }}>
+              {/* Empty placeholder — only shown to editors */}
+              {!shift && !readonly && (
+                <div style={{ fontSize: 9, color: "#c0b0a0", textAlign: "center", marginTop: 10, fontStyle: "italic" }}>
                   + add shift
                 </div>
               )}
