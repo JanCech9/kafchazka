@@ -27,7 +27,7 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
       {/* Month navigation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <button className="nav-btn" onClick={onPrevMonth}>← Prev</button>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#f0e8d8" }}>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#3a2e20" }}>
           {MONTHS[month]} {year}
         </div>
         <button className="nav-btn" onClick={onNextMonth}>Next →</button>
