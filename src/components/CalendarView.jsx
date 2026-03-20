@@ -1,53 +1,46 @@
 import { DAYS, MONTHS } from "../constants";
 import { getMonthGrid, isWeekend, dateKey } from "../utils";
 
-/**
- * CalendarView
- *
- * Renders the monthly calendar grid. Each day cell shows assigned shift(s)
- * colour-coded by staff member. Clicking a cell opens the shift modal.
- *
- * Props:
- *   year        – currently displayed year
- *   month       – currently displayed month (0-indexed)
- *   shifts      – the full shifts object keyed by YYYY-MM-DD
- *   staff       – array of { name, color }
- *   todayKey    – YYYY-MM-DD string for today (used to highlight current day)
- *   onPrevMonth – callback to go to previous month
- *   onNextMonth – callback to go to next month
- *   onDayClick  – callback(day: number) when a day cell is clicked
- */
+// Shortened day labels for narrow screens
+const DAYS_SHORT = ["M", "T", "W", "T", "F", "S", "S"];
+
 export default function CalendarView({ year, month, shifts, staff, todayKey, onPrevMonth, onNextMonth, onDayClick, readonly = false }) {
   const grid = getMonthGrid(year, month);
   const getStaffColor = (name) => staff.find(s => s.name === name)?.color || "#aaa";
 
   return (
-    <div style={{ padding: "24px 20px", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ padding: "16px 10px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
 
       {/* Month navigation */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <button className="nav-btn" onClick={onPrevMonth}>← Prev</button>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#3a2e20" }}>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(16px, 4vw, 22px)", fontWeight: 700, color: "#3a2e20" }}>
           {MONTHS[month]} {year}
         </div>
         <button className="nav-btn" onClick={onNextMonth}>Next →</button>
       </div>
 
       {/* Weekday header row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
-        {DAYS.map(d => (
-          <div key={d} style={{
-            textAlign: "center", fontSize: 11, fontWeight: 600,
-            letterSpacing: "0.1em", textTransform: "uppercase", padding: "6px 0",
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "clamp(2px, 0.8vw, 6px)", marginBottom: "clamp(2px, 0.8vw, 6px)" }}>
+        {DAYS.map((d, i) => (
+          <div key={d + i} style={{
+            textAlign: "center",
+            fontSize: "clamp(8px, 2vw, 11px)",
+            fontWeight: 600,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            padding: "4px 0",
             color: d === "Sat" || d === "Sun" ? "#a0622a" : "#9a8a7a",
           }}>
-            {d}
+            {/* Full label on wide screens, single letter on narrow */}
+            <span className="day-label-full">{d}</span>
+            <span className="day-label-short">{DAYS_SHORT[i]}</span>
           </div>
         ))}
       </div>
 
       {/* Day cells */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "clamp(2px, 0.8vw, 6px)" }}>
         {grid.map((day, i) => {
           if (!day) return <div key={`empty-${i}`} />;
 
@@ -66,17 +59,21 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
                 border: isToday
                   ? "1.5px solid #a0622a"
                   : `1px solid ${we ? "#c8b8a0" : "#d8cfc4"}`,
-                borderRadius: 8,
-                padding: "8px 6px",
-                minHeight: 80,
+                borderRadius: "clamp(4px, 1.5vw, 8px)",
+                padding: "clamp(3px, 1.2vw, 8px) clamp(2px, 1vw, 6px)",
+                minHeight: "clamp(48px, 12vw, 90px)",
                 cursor: readonly ? "default" : "pointer",
+                overflow: "hidden",
               }}
             >
               {/* Day number */}
               <div style={{
-                fontSize: 12, fontWeight: isToday ? 700 : 400,
+                fontSize: "clamp(9px, 2.5vw, 13px)",
+                fontWeight: isToday ? 700 : 400,
                 color: we ? "#a0622a" : (isToday ? "#3a2e20" : "#9a8a7a"),
-                marginBottom: 4, textAlign: "right",
+                marginBottom: 2,
+                textAlign: "right",
+                lineHeight: 1,
               }}>
                 {day}
               </div>
@@ -89,15 +86,15 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
               {/* Split shift — two badges */}
               {shift && shift.split && (
                 <>
-                  {shift.p1?.staff && <ShiftBadge part={shift.p1} color={getStaffColor(shift.p1.staff)} mb={2} />}
+                  {shift.p1?.staff && <ShiftBadge part={shift.p1} color={getStaffColor(shift.p1.staff)} mb={1} />}
                   {shift.p2?.staff && <ShiftBadge part={shift.p2} color={getStaffColor(shift.p2.staff)} />}
                 </>
               )}
 
               {/* Empty placeholder — only shown to editors */}
               {!shift && !readonly && (
-                <div style={{ fontSize: 9, color: "#c0b0a0", textAlign: "center", marginTop: 10, fontStyle: "italic" }}>
-                  + add shift
+                <div style={{ fontSize: "clamp(7px, 1.8vw, 9px)", color: "#c0b0a0", textAlign: "center", marginTop: 6, fontStyle: "italic" }}>
+                  +
                 </div>
               )}
             </div>
@@ -107,11 +104,11 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
 
       {/* Staff colour legend */}
       {staff.length > 0 && (
-        <div style={{ marginTop: 20, display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
           {staff.map(s => (
-            <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: s.color }} />
-              <span style={{ fontSize: 12, color: "#8a7a6a" }}>{s.name}</span>
+            <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+              <span style={{ fontSize: "clamp(10px, 2.5vw, 12px)", color: "#8a7a6a" }}>{s.name}</span>
             </div>
           ))}
         </div>
@@ -133,9 +130,12 @@ function ShiftBadge({ part, color, mb = 0 }) {
         color,
         border: `1px solid ${color}55`,
         marginBottom: mb,
+        fontSize: "clamp(7px, 1.8vw, 10px)",
+        padding: "1px 3px",
+        borderRadius: 3,
       }}
     >
-      <div style={{ fontWeight: 600, fontSize: 10 }}>{part.staff}</div>
+      <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{part.staff}</div>
       <div style={{ opacity: 0.8 }}>{part.start}–{part.end}</div>
     </div>
   );
