@@ -33,7 +33,7 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
         {/* Split shift toggle */}
         <div style={{
           display: "flex", alignItems: "center", gap: 12, marginBottom: 20,
-          padding: "12px 16px", background: "#1a1510", borderRadius: 10,
+          padding: "12px 16px", background: "#ddd5c5", borderRadius: 10,
         }}>
           <label className="toggle-switch">
             <input
@@ -44,8 +44,8 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
             <span className="toggle-slider" />
           </label>
           <div>
-            <div style={{ fontSize: 13, color: "#d8c8a8" }}>Split shift</div>
-            <div style={{ fontSize: 11, color: "#6a5a4a" }}>Two people cover the day</div>
+            <div style={{ fontSize: 13, color: "#6a5a4a" }}>Split shift</div>
+            <div style={{ fontSize: 11, color: "#7a6a5a" }}>Two people cover the day</div>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
         {form.split && (
           <div style={{
             marginTop: 12, padding: 14,
-            background: "#1a1510", borderRadius: 10, border: "1px solid #3a2e20",
+            background: "#ddd5c5", borderRadius: 10, border: "1px solid #d8c8a8",
           }}>
             <ShiftPart
               label="Part 2"
