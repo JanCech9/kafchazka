@@ -41,3 +41,50 @@ export function formatDayLabel(year, month, day) {
     month: "long",
   });
 }
+
+/**
+ * Parses a "HH:MM" time string into total minutes since midnight.
+ */
+function timeToMinutes(time) {
+  if (!time) return 0;
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Returns the duration in hours between two "HH:MM" strings.
+ * Returns 0 if end is before or equal to start.
+ */
+function shiftHours(start, end) {
+  const diff = timeToMinutes(end) - timeToMinutes(start);
+  return diff > 0 ? diff / 60 : 0;
+}
+
+/**
+ * Calculates total hours worked per staff member for a given month.
+ * Returns an object keyed by staff name, e.g. { "Anna": 42.5, "Tom": 38 }.
+ *
+ * @param {object} shifts  – the full shifts object keyed by YYYY-MM-DD
+ * @param {number} year
+ * @param {number} month   – 0-indexed
+ */
+export function calcMonthlyHours(shifts, year, month) {
+  const prefix = `${year}-${String(month + 1).padStart(2, "0")}-`;
+  const totals = {};
+
+  Object.entries(shifts).forEach(([date, shift]) => {
+    if (!date.startsWith(prefix)) return;
+
+    // Part 1 is always present
+    if (shift.p1?.staff && shift.p1.start && shift.p1.end) {
+      totals[shift.p1.staff] = (totals[shift.p1.staff] || 0) + shiftHours(shift.p1.start, shift.p1.end);
+    }
+
+    // Part 2 only exists on split shifts
+    if (shift.split && shift.p2?.staff && shift.p2.start && shift.p2.end) {
+      totals[shift.p2.staff] = (totals[shift.p2.staff] || 0) + shiftHours(shift.p2.start, shift.p2.end);
+    }
+  });
+
+  return totals;
+}

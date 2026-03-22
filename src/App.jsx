@@ -227,7 +227,7 @@ export default function App() {
       )}
 
       {!loading && isEditor && view === "staff" && (
-        <StaffView staff={staff} onAdd={handleAddStaff} onRemove={handleRemoveStaff} />
+        <StaffView staff={staff} shifts={shifts} year={year} month={month} onAdd={handleAddStaff} onRemove={handleRemoveStaff} />
       )}
 
       {modal && (
