@@ -5,12 +5,12 @@ export const MONTHS = [
   "July","August","September","October","November","December"
 ];
 
-export const DEFAULT_WEEKDAY = { start: "06:45", end: "18:00" };
+export const DEFAULT_WEEKDAY = { start: "08:00", end: "17:00" };
 export const DEFAULT_WEEKEND = { start: "09:00", end: "16:00" };
 
 export const STAFF_COLORS = [
-  "#e8a87c","#85c1a3","#f0b8b8","#a8c8e8","#d4b8e8","#f0d080",
-  "#b8e0b8","#f0c0a0","#80c8d8","#e8b0c8","#c8d890","#f8c878"
+  "#b85c20","#2e8c5a","#b83030","#2060a8","#7040a8","#a87c10",
+  "#1e7a6a","#c05010","#1878a0","#a03070","#5a7e18","#b86c10"
 ];
 
 export const STORAGE_KEYS = {

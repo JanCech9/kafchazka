@@ -126,17 +126,17 @@ function ShiftBadge({ part, color, mb = 0 }) {
     <div
       className="shift-badge"
       style={{
-        background: color + "33",
+        background: color + "44",
         color,
-        border: `1px solid ${color}55`,
+        border: `1px solid ${color}99`,
         marginBottom: mb,
         fontSize: "clamp(7px, 1.8vw, 10px)",
         padding: "1px 3px",
         borderRadius: 3,
       }}
     >
-      <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{part.staff}</div>
-      <div style={{ opacity: 0.8 }}>{part.start}–{part.end}</div>
+      <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>{part.staff}</div>
+      <div style={{ opacity: 0.9 }}>{part.start}–{part.end}</div>
     </div>
   );
 }
