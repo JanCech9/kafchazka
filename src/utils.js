@@ -43,6 +43,18 @@ export function formatDayLabel(year, month, day) {
 }
 
 /**
+ * Returns the hex colour for a given staff name, falling back to grey.
+ * Used in both CalendarView and ShiftModal.
+ */
+export function getStaffColor(staff, name) {
+  return staff.find(s => s.name === name)?.color || "#888";
+}
+
+// ---------------------------------------------------------------------------
+// Private helpers
+// ---------------------------------------------------------------------------
+
+/**
  * Parses a "HH:MM" time string into total minutes since midnight.
  */
 function timeToMinutes(time) {

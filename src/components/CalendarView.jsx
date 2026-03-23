@@ -1,12 +1,10 @@
-import { DAYS, MONTHS } from "../constants";
-import { getMonthGrid, isWeekend, dateKey } from "../utils";
+import { DAYS, DAYS_SHORT, MONTHS } from "../constants";
+import { getMonthGrid, isWeekend, dateKey, getStaffColor } from "../utils";
 
-// Shortened day labels for narrow screens
-const DAYS_SHORT = ["M", "T", "W", "T", "F", "S", "S"];
+// Shortened day labels for narrow screens are now in constants.js alongside DAYS
 
 export default function CalendarView({ year, month, shifts, staff, todayKey, onPrevMonth, onNextMonth, onDayClick, readonly = false }) {
   const grid = getMonthGrid(year, month);
-  const getStaffColor = (name) => staff.find(s => s.name === name)?.color || "#aaa";
 
   return (
     <div style={{ padding: "16px 10px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
@@ -78,16 +76,14 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
                 {day}
               </div>
 
-              {/* Full shift (not split) */}
               {shift && !shift.split && shift.p1?.staff && (
-                <ShiftBadge part={shift.p1} color={getStaffColor(shift.p1.staff)} />
+                <ShiftBadge part={shift.p1} color={getStaffColor(staff, shift.p1.staff)} />
               )}
 
-              {/* Split shift — two badges */}
               {shift && shift.split && (
                 <>
-                  {shift.p1?.staff && <ShiftBadge part={shift.p1} color={getStaffColor(shift.p1.staff)} mb={1} />}
-                  {shift.p2?.staff && <ShiftBadge part={shift.p2} color={getStaffColor(shift.p2.staff)} />}
+                  {shift.p1?.staff && <ShiftBadge part={shift.p1} color={getStaffColor(staff, shift.p1.staff)} mb={1} />}
+                  {shift.p2?.staff && <ShiftBadge part={shift.p2} color={getStaffColor(staff, shift.p2.staff)} />}
                 </>
               )}
 

@@ -11,7 +11,8 @@ import StaffView from "./components/StaffView";
 import ShiftModal from "./components/ShiftModal";
 
 export default function App() {
-  const today = new Date();
+  const today    = new Date();
+  const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
   // ── Auth ───────────────────────────────────────────────────────────────
   // session === undefined means auth state not yet resolved (show nothing)
@@ -133,8 +134,6 @@ export default function App() {
 
   // ── Tab navigation ─────────────────────────────────────────────────────
   const [view, setView] = useState("calendar");
-
-  const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
   // ── Spinner while auth resolves ────────────────────────────────────────
   if (session === undefined) {

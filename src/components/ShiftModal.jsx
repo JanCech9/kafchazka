@@ -1,4 +1,4 @@
-import { formatDayLabel, isWeekend } from "../utils";
+import { formatDayLabel, isWeekend, getStaffColor } from "../utils";
 
 /**
  * ShiftModal
@@ -17,7 +17,6 @@ import { formatDayLabel, isWeekend } from "../utils";
  */
 export default function ShiftModal({ modal, year, month, staff, form, setForm, onSave, onClear, onClose, readonly = false }) {
   const we = isWeekend(year, month, modal.day);
-  const getStaffColor = (name) => staff.find(s => s.name === name)?.color || "#888";
 
   // ── Readonly view ────────────────────────────────────────────────────────
   if (readonly) {
@@ -46,7 +45,7 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
                 name={form.p1staff}
                 start={form.p1start}
                 end={form.p1end}
-                color={getStaffColor(form.p1staff)}
+                color={getStaffColor(staff, form.p1staff)}
               />
               {form.split && form.p2staff && (
                 <ShiftDetailCard
@@ -54,7 +53,7 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
                   name={form.p2staff}
                   start={form.p2start}
                   end={form.p2end}
-                  color={getStaffColor(form.p2staff)}
+                  color={getStaffColor(staff, form.p2staff)}
                 />
               )}
             </div>
