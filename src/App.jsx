@@ -97,9 +97,12 @@ export default function App() {
   const [form,  setForm]  = useState({});
 
   const openModal = (day) => {
-    if (!isEditor) return; // readonly visitors can't open the modal
     const key = dateKey(year, month, day);
     const existing = shifts[key] || {};
+
+    // Guests can only open the modal if a shift is actually scheduled
+    if (!isEditor && !existing.p1?.staff) return;
+
     const def = isWeekend(year, month, day) ? DEFAULT_WEEKEND : DEFAULT_WEEKDAY;
     setForm({
       split:   !!existing.split,
@@ -225,7 +228,6 @@ export default function App() {
           readonly={!isEditor}
         />
       )}
-
       {!loading && isEditor && view === "staff" && (
         <StaffView staff={staff} shifts={shifts} year={year} month={month} onAdd={handleAddStaff} onRemove={handleRemoveStaff} />
       )}
@@ -235,6 +237,7 @@ export default function App() {
           modal={modal} year={year} month={month} staff={staff}
           form={form} setForm={setForm}
           onSave={handleSaveShift} onClear={handleClearShift} onClose={() => setModal(null)}
+          readonly={!isEditor}
         />
       )}
     </div>

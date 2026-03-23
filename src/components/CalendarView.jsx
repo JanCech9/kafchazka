@@ -52,8 +52,8 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
           return (
             <div
               key={key}
-              className={readonly ? undefined : "day-cell"}
-              onClick={() => !readonly && onDayClick(day)}
+              className={(!readonly || shift) ? "day-cell" : undefined}
+              onClick={() => onDayClick(day)}
               style={{
                 background: isToday ? "#ddd5c5" : "#ede6da",
                 border: isToday
@@ -62,7 +62,7 @@ export default function CalendarView({ year, month, shifts, staff, todayKey, onP
                 borderRadius: "clamp(4px, 1.5vw, 8px)",
                 padding: "clamp(3px, 1.2vw, 8px) clamp(2px, 1vw, 6px)",
                 minHeight: "clamp(48px, 12vw, 90px)",
-                cursor: readonly ? "default" : "pointer",
+                cursor: (!readonly || shift) ? "pointer" : "default",
                 overflow: "hidden",
               }}
             >
