@@ -123,7 +123,9 @@ export default function StaffView({ staff, shifts, year, month, onAdd, onRemove 
                 <div style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
                 <span style={{ fontSize: 14, color: "#3a2e20" }}>{s.name}</span>
                 <button
-                  onClick={() => onRemove(s.id)}
+                  onClick={() => {
+                    if (window.confirm(`Remove ${s.name} from staff? This cannot be undone.`)) onRemove(s.id);
+                  }}
                   style={{ background: "none", border: "none", color: "#9a8a7a", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 0 0 4px" }}
                 >
                   ×

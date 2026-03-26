@@ -119,7 +119,14 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
 
         {/* Action buttons */}
         <div style={{ display: "flex", gap: 8, marginTop: 20, justifyContent: "space-between" }}>
-          <button className="btn-danger" onClick={onClear}>Clear</button>
+          <button
+            className="btn-danger"
+            onClick={() => {
+              if (window.confirm("Remove this shift? This cannot be undone.")) onClear();
+            }}
+          >
+            Clear
+          </button>
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn-ghost" onClick={onClose}>Cancel</button>
             <button className="btn-primary" onClick={onSave}>Save Shift</button>
