@@ -3,21 +3,25 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import { STAFF_COLORS, DEFAULT_WEEKDAY, DEFAULT_WEEKEND } from "./constants";
 import { dateKey, isWeekend } from "./utils";
-import { loadStaff, loadShifts, addStaffMember, removeStaffMember, saveShift, deleteShift } from "./storage";
+import {
+  loadStaff, loadShifts, addStaffMember, removeStaffMember, saveShift, deleteShift,
+  getMyProfile, loadShiftRequests, createShiftRequest, setRequestStatus, deleteShiftRequest,
+} from "./storage";
 import { globalCss, appShell, header } from "./styles";
 
 import CalendarView from "./components/CalendarView";
 import StaffView from "./components/StaffView";
 import ShiftModal from "./components/ShiftModal";
+import RequestsView from "./components/RequestsView";
 
 export default function App() {
   const today    = new Date();
   const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
   // ── Auth ───────────────────────────────────────────────────────────────
-  // session === undefined means auth state not yet resolved (show nothing)
-  // session === null means resolved but not logged in (show readonly)
-  // session === object means logged in (show editable)
+  // session === undefined  → auth not resolved yet (show spinner)
+  // session === null       → resolved, not logged in (guest)
+  // session === object     → logged in
   const [session,      setSession]      = useState(undefined);
   const [showLogin,    setShowLogin]    = useState(false); // login dropdown in header
   const [authEmail,    setAuthEmail]    = useState("");
@@ -25,6 +29,19 @@ export default function App() {
   const [authError,    setAuthError]    = useState("");
   const [authLoading,  setAuthLoading]  = useState(false);
 
+  // ── Role / profile ───────────────────────────────────────────────────────
+  // role === undefined → profile not resolved yet (show spinner while logged in)
+  // role === null      → guest, or logged in without a profile row
+  // role === 'admin' | 'employee'
+  const [role,      setRole]      = useState(undefined);
+  const [myStaffId, setMyStaffId] = useState(null);
+  const [requests,  setRequests]  = useState([]);
+
+  const isLoggedIn = !!session;
+  const isAdmin    = role === "admin";
+  const isEmployee = role === "employee";
+
+  // Resolve the session on mount and subscribe to auth changes
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -33,6 +50,33 @@ export default function App() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  // Load role, linked staff member, and requests whenever the session changes.
+  // THIS is where the snippet I gave you was meant to live — inside an effect,
+  // wrapped in an async IIFE so `await` is legal.
+  useEffect(() => {
+    if (session === undefined) return;        // auth not resolved yet
+    if (!session) {                           // logged out / guest
+      setRole(null);
+      setMyStaffId(null);
+      setRequests([]);
+      return;
+    }
+    setRole(undefined);                       // logged in — show spinner until profile arrives
+    (async () => {
+      try {
+        const profile = await getMyProfile();
+        setRole(profile?.role ?? null);
+        setMyStaffId(profile?.staff_id ?? null);
+        setRequests(await loadShiftRequests());
+      } catch (err) {
+        console.error("profile load:", err.message);
+        setRole(null);
+        setMyStaffId(null);
+        setRequests([]);
+      }
+    })();
+  }, [session]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -47,8 +91,6 @@ export default function App() {
     supabase.auth.signOut();
     setView("calendar"); // return to calendar on logout
   };
-
-  const isEditor = !!session; // shorthand used throughout render
 
   // ── Calendar navigation ────────────────────────────────────────────────
   const [year,  setYear]  = useState(today.getFullYear());
@@ -80,7 +122,10 @@ export default function App() {
     });
   }, [session]);
 
-  // ── Staff actions (editors only) ───────────────────────────────────────
+  // The staff member this employee account is linked to (empty string if unlinked)
+  const myStaffName = staff.find(s => s.id === myStaffId)?.name || "";
+
+  // ── Staff actions (admin only) ─────────────────────────────────────────
   const handleAddStaff = async (name) => {
     if (staff.find(s => s.name === name)) return;
     const color = STAFF_COLORS[staff.length % STAFF_COLORS.length];
@@ -93,16 +138,17 @@ export default function App() {
     setStaff(prev => prev.filter(s => s.id !== id));
   };
 
-  // ── Shift modal (editors only) ─────────────────────────────────────────
+  // ── Shift modal ────────────────────────────────────────────────────────
   const [modal, setModal] = useState(null);
   const [form,  setForm]  = useState({});
+  const [acceptingId, setAcceptingId] = useState(null); // request being accepted, or null
 
   const openModal = (day) => {
     const key = dateKey(year, month, day);
     const existing = shifts[key] || {};
 
-    // Guests can only open the modal if a shift is actually scheduled
-    if (!isEditor && !existing.p1?.staff) return;
+    // Guests can only open a day that has a shift. Admins and employees can open any day.
+    if (role === null && !existing.p1?.staff) return;
 
     const def = isWeekend(year, month, day) ? DEFAULT_WEEKEND : DEFAULT_WEEKDAY;
     setForm({
@@ -113,6 +159,10 @@ export default function App() {
       p2staff: existing.p2?.staff  || "",
       p2start: existing.p2?.start  || "12:30",
       p2end:   existing.p2?.end    || def.end,
+      // request fields (used in employee mode)
+      reqStart: def.start,
+      reqEnd:   def.end,
+      note: "",
     });
     setModal({ day, key });
   };
@@ -123,20 +173,83 @@ export default function App() {
       : { split: false, p1: { staff: form.p1staff, start: form.p1start, end: form.p1end } };
     await saveShift(modal.key, shift);
     setShifts(prev => ({ ...prev, [modal.key]: shift }));
+
+    // If this save came from accepting a request, mark that request accepted.
+    if (acceptingId) {
+      await setRequestStatus(acceptingId, "accepted");
+      setRequests(await loadShiftRequests());
+      setAcceptingId(null);
+    }
     setModal(null);
   };
 
   const handleClearShift = async () => {
     await deleteShift(modal.key);
     setShifts(prev => { const next = { ...prev }; delete next[modal.key]; return next; });
+    setAcceptingId(null);
     setModal(null);
+  };
+
+  const closeModal = () => { setModal(null); setAcceptingId(null); };
+
+  // ── Shift requests ─────────────────────────────────────────────────────
+  // Employee submits a request from the modal
+  const handleRequestShift = async () => {
+    if (!myStaffName) return;
+    try {
+      await createShiftRequest({
+        staffName: myStaffName,
+        date: modal.key,
+        startTime: form.reqStart,
+        endTime: form.reqEnd,
+        note: form.note,
+      });
+      setRequests(await loadShiftRequests());
+    } catch (err) {
+      console.error("createShiftRequest:", err.message);
+    }
+    setModal(null);
+  };
+
+  // Admin clicks "Accept" → open the shift modal pre-filled from the request.
+  // Saving in the modal both writes the shift and marks the request accepted.
+  const openAccept = (req) => {
+    const [y, m, d] = req.date.split("-").map(Number);
+    setYear(y);
+    setMonth(m - 1);
+    const def = isWeekend(y, m - 1, d) ? DEFAULT_WEEKEND : DEFAULT_WEEKDAY;
+    setForm({
+      split:   false,
+      p1staff: req.staff_name,
+      p1start: req.start_time,
+      p1end:   req.end_time,
+      p2staff: "",
+      p2start: "12:30",
+      p2end:   def.end,
+      reqStart: def.start,
+      reqEnd:   def.end,
+      note: "",
+    });
+    setModal({ day: d, key: req.date });
+    setAcceptingId(req.id);
+  };
+
+  const handleRejectRequest = async (id) => {
+    await setRequestStatus(id, "rejected");
+    setRequests(await loadShiftRequests());
+  };
+
+  const handleDeleteRequest = async (id) => {
+    await deleteShiftRequest(id);
+    setRequests(await loadShiftRequests());
   };
 
   // ── Tab navigation ─────────────────────────────────────────────────────
   const [view, setView] = useState("calendar");
+  const pendingCount = requests.filter(r => r.status === "pending").length;
 
-  // ── Spinner while auth resolves ────────────────────────────────────────
-  if (session === undefined) {
+  // ── Spinner while auth / profile resolve ───────────────────────────────
+  if (session === undefined || (session && role === undefined)) {
     return (
       <div style={{ ...appShell, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{globalCss}</style>
@@ -160,14 +273,22 @@ export default function App() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Staff tab only visible to editors */}
           <button className={`tab-btn${view === "calendar" ? " active" : ""}`} onClick={() => setView("calendar")}>Calendar</button>
-          {isEditor && (
+
+          {/* Staff tab — admins only */}
+          {isAdmin && (
             <button className={`tab-btn${view === "staff" ? " active" : ""}`} onClick={() => setView("staff")}>Staff</button>
           )}
 
+          {/* Requests tab — anyone logged in */}
+          {(isAdmin || isEmployee) && (
+            <button className={`tab-btn${view === "requests" ? " active" : ""}`} onClick={() => setView("requests")}>
+              Requests{isAdmin && pendingCount > 0 ? ` (${pendingCount})` : ""}
+            </button>
+          )}
+
           {/* Auth controls */}
-          {isEditor ? (
+          {isLoggedIn ? (
             <button className="btn-ghost" onClick={handleLogout} style={{ fontSize: 12, padding: "6px 14px", marginLeft: 8 }}>
               Sign out
             </button>
@@ -185,7 +306,7 @@ export default function App() {
                   borderRadius: 12, padding: 20, width: 280,
                   boxShadow: "0 12px 40px rgba(80,60,40,0.15)", zIndex: 200,
                 }}>
-                  <div style={{ fontSize: 13, color: "#7a6a5a", marginBottom: 14, fontStyle: "italic" }}>Sign in to edit shifts</div>
+                  <div style={{ fontSize: 13, color: "#7a6a5a", marginBottom: 14, fontStyle: "italic" }}>Sign in to manage shifts</div>
                   <form onSubmit={handleLogin}>
                     <div style={{ marginBottom: 10 }}>
                       <span className="field-label">Email</span>
@@ -207,10 +328,17 @@ export default function App() {
         </div>
       </div>
 
-      {/* Readonly banner for visitors */}
-      {!isEditor && !loading && (
+      {/* Guest banner */}
+      {!isLoggedIn && !loading && (
         <div style={{ background: "#f5f0e8", borderBottom: "1px solid #d8cfc4", padding: "8px 20px", textAlign: "center", fontSize: 12, color: "#9a8a7a", fontStyle: "italic" }}>
-          Viewing as guest — sign in to edit shifts
+          Viewing as guest — sign in to manage shifts
+        </div>
+      )}
+
+      {/* Employee banner */}
+      {isEmployee && !loading && (
+        <div style={{ background: "#f5f0e8", borderBottom: "1px solid #d8cfc4", padding: "8px 20px", textAlign: "center", fontSize: 12, color: "#9a8a7a", fontStyle: "italic" }}>
+          {myStaffName ? `Signed in as ${myStaffName} — ` : ""}click any day to request a shift
         </div>
       )}
 
@@ -224,19 +352,37 @@ export default function App() {
           year={year} month={month} shifts={shifts} staff={staff}
           todayKey={todayKey} onPrevMonth={prevMonth} onNextMonth={nextMonth}
           onDayClick={openModal}
-          readonly={!isEditor}
+          readonly={!isAdmin}
         />
       )}
-      {!loading && isEditor && view === "staff" && (
+
+      {!loading && isAdmin && view === "staff" && (
         <StaffView staff={staff} shifts={shifts} year={year} month={month} onAdd={handleAddStaff} onRemove={handleRemoveStaff} />
+      )}
+
+      {!loading && (isAdmin || isEmployee) && view === "requests" && (
+        <RequestsView
+          requests={requests}
+          isAdmin={isAdmin}
+          onAccept={openAccept}
+          onReject={handleRejectRequest}
+          onDelete={handleDeleteRequest}
+        />
       )}
 
       {modal && (
         <ShiftModal
           modal={modal} year={year} month={month} staff={staff}
           form={form} setForm={setForm}
-          onSave={handleSaveShift} onClear={handleClearShift} onClose={() => setModal(null)}
-          readonly={!isEditor}
+          mode={isAdmin ? "admin" : isEmployee ? "employee" : "guest"}
+          myStaffName={myStaffName}
+          notice={acceptingId && shifts[modal.key]?.p1?.staff
+            ? "A shift already exists on this day — saving will replace it."
+            : null}
+          onSave={handleSaveShift}
+          onClear={handleClearShift}
+          onRequest={handleRequestShift}
+          onClose={closeModal}
         />
       )}
     </div>

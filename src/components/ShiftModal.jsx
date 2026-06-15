@@ -4,22 +4,28 @@ import { formatDayLabel, isWeekend, getStaffColor } from "../utils";
  * ShiftModal
  *
  * Props:
- *   modal      – { day, key } — the day being viewed/edited
- *   year       – current calendar year
- *   month      – current calendar month (0-indexed)
- *   staff      – array of { name, color }
- *   form       – controlled form state { split, p1staff, p1start, p1end, p2staff, p2start, p2end }
- *   setForm    – setter for form state (unused in readonly mode)
- *   onSave     – called when the user clicks Save (editor only)
- *   onClear    – called when the user clicks Clear (editor only)
- *   onClose    – called when the modal should close
- *   readonly   – when true, shows shift details only with no edit controls
+ *   modal        – { day, key } — the day being viewed/edited
+ *   year, month  – current calendar position (month is 0-indexed)
+ *   staff        – array of { id, name, color }
+ *   form         – controlled form state
+ *   setForm      – setter for form state
+ *   mode         – "guest" (readonly) | "employee" (request) | "admin" (full editor)
+ *   myStaffName  – the employee's linked staff name (employee mode only)
+ *   notice       – optional warning string shown above the editor (admin mode, accept flow)
+ *   onSave       – save the shift (admin)
+ *   onClear      – clear the shift (admin)
+ *   onRequest    – submit a shift request (employee)
+ *   onClose      – close the modal
  */
-export default function ShiftModal({ modal, year, month, staff, form, setForm, onSave, onClear, onClose, readonly = false }) {
+export default function ShiftModal({
+  modal, year, month, staff, form, setForm,
+  mode = "guest", myStaffName = "", notice = null,
+  onSave, onClear, onRequest, onClose,
+}) {
   const we = isWeekend(year, month, modal.day);
 
-  // ── Readonly view ────────────────────────────────────────────────────────
-  if (readonly) {
+  // ── Guest view (readonly) ──────────────────────────────────────────────
+  if (mode === "guest") {
     const hasShift = form.p1staff;
     return (
       <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -42,17 +48,13 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
               <ShiftDetailCard
                 label={form.split ? "Part 1" : "Shift"}
-                name={form.p1staff}
-                start={form.p1start}
-                end={form.p1end}
+                name={form.p1staff} start={form.p1start} end={form.p1end}
                 color={getStaffColor(staff, form.p1staff)}
               />
               {form.split && form.p2staff && (
                 <ShiftDetailCard
                   label="Part 2"
-                  name={form.p2staff}
-                  start={form.p2start}
-                  end={form.p2end}
+                  name={form.p2staff} start={form.p2start} end={form.p2end}
                   color={getStaffColor(staff, form.p2staff)}
                 />
               )}
@@ -68,7 +70,86 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
     );
   }
 
-  // ── Editor view ──────────────────────────────────────────────────────────
+  // ── Employee view (request a shift) ────────────────────────────────────
+  if (mode === "employee") {
+    const hasShift = form.p1staff;
+    const canRequest = !!myStaffName;
+    return (
+      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal-box">
+
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 4, color: "#3a2e20" }}>
+            {formatDayLabel(year, month, modal.day)}
+          </div>
+          <div style={{ fontSize: 11, color: "#9a8a7a", marginBottom: 20, fontStyle: "italic" }}>
+            {we ? "Weekend shift" : "Weekday shift"}
+          </div>
+
+          {/* Show what's already scheduled so the employee knows if the day is taken */}
+          {hasShift && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, color: "#9a8a7a", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
+                Already scheduled
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <ShiftDetailCard
+                  label={form.split ? "Part 1" : "Shift"}
+                  name={form.p1staff} start={form.p1start} end={form.p1end}
+                  color={getStaffColor(staff, form.p1staff)}
+                />
+                {form.split && form.p2staff && (
+                  <ShiftDetailCard
+                    label="Part 2"
+                    name={form.p2staff} start={form.p2start} end={form.p2end}
+                    color={getStaffColor(staff, form.p2staff)}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {!canRequest ? (
+            <div style={{ color: "#a04040", fontSize: 13, lineHeight: 1.5, marginBottom: 20 }}>
+              Your account isn't linked to a staff member yet. Ask an admin to link it before requesting shifts.
+            </div>
+          ) : (
+            <div style={{ padding: 14, background: "#ede6da", borderRadius: 10, border: "1px solid #d8cfc4", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, color: "#8a7a6a", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>
+                Request as {myStaffName}
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <span className="field-label">Hours</span>
+                <div className="time-row">
+                  <input type="time" className="field-input" style={{ flex: 1 }} value={form.reqStart} onChange={e => setForm(f => ({ ...f, reqStart: e.target.value }))} />
+                  <span className="time-sep">→</span>
+                  <input type="time" className="field-input" style={{ flex: 1 }} value={form.reqEnd} onChange={e => setForm(f => ({ ...f, reqEnd: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <span className="field-label">Note (optional)</span>
+                <textarea
+                  className="field-input"
+                  rows={2}
+                  style={{ resize: "vertical", fontFamily: "inherit" }}
+                  value={form.note}
+                  onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                  placeholder="Anything the manager should know…"
+                />
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button className="btn-ghost" onClick={onClose}>Close</button>
+            {canRequest && <button className="btn-primary" onClick={onRequest}>Request shift</button>}
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ── Admin view (full editor) ───────────────────────────────────────────
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box">
@@ -79,6 +160,13 @@ export default function ShiftModal({ modal, year, month, staff, form, setForm, o
         <div style={{ fontSize: 11, color: "#9a8a7a", marginBottom: 20, fontStyle: "italic" }}>
           {we ? "Weekend shift" : "Weekday shift"}
         </div>
+
+        {/* Warning shown when accepting a request onto a day that already has a shift */}
+        {notice && (
+          <div style={{ background: "#fbe6d8", border: "1px solid #e0b890", color: "#8a5a20", borderRadius: 8, padding: "8px 12px", fontSize: 12, marginBottom: 16, lineHeight: 1.4 }}>
+            {notice}
+          </div>
+        )}
 
         {/* Split shift toggle */}
         <div style={{

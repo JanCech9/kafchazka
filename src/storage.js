@@ -113,3 +113,50 @@ export async function deleteShift(date) {
 
   if (error) console.error("deleteShift:", error.message);
 }
+
+/**
+ * Returns { id, role, staff_id } where:
+ * - id: the user's unique ID (matches the auth user ID)
+ * - role: 'employee' or 'admin'
+ * - staff_id: the linked staff member's ID, or null if not linked
+   (employees must be linked to a staff member to create shift requests)
+  *
+  * Note: this function assumes the user is already authenticated. If not signed in, it returns null.
+  *  */
+export async function getMyProfile() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('profiles').select('id, role, staff_id').eq('id', user.id).single();
+  if (error) throw error;
+  return data;                                   
+
+}
+
+export async function loadShiftRequests() {
+  const { data, error } = await supabase
+    .from('shift_requests').select('*').order('created_at', { ascending: true });
+  if (error) throw error;
+  return data;        // RLS returns own rows for employees, all rows for admins
+}
+
+export async function createShiftRequest({ staffName, date, startTime, endTime, note }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { data, error } = await supabase.from('shift_requests').insert({
+    employee_id: user.id, staff_name: staffName, date,
+    start_time: startTime, end_time: endTime, note: note ?? null, status: 'pending',
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setRequestStatus(id, status) {        // 'accepted' | 'rejected'
+  const { error } = await supabase.from('shift_requests').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteShiftRequest(id) {
+  const { error } = await supabase.from('shift_requests').delete().eq('id', id);
+  if (error) throw error;
+}
